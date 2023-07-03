@@ -6,7 +6,7 @@ export default class GameObject {
         gameEngine.start(this)
     }
     
-    async start(){
+    start(){
         
     }
 

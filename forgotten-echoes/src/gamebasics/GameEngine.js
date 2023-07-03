@@ -26,5 +26,4 @@ class GameEngine {
 }
 
 let gameEngineInstance = Object.freeze(new GameEngine())
-
 export default gameEngineInstance;

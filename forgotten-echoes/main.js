@@ -1,12 +1,19 @@
 import Box from './src/Entities/Box';
-import GameBase from './src/gamebasics/GameBase';
+import Level from './src/Scenes/Level';
+import Game from './src/gamebasics/Game';
 import './style.css'
 import * as THREE from 'three'
 
 
 
-const gameBase = new GameBase()
+const gameBase = new Game()
 
 const box = new Box(1, 1, 1)
 
-gameBase.addToScene(box.mesh)
+const scene = new THREE.Scene()
+gameBase.sceneManager.loadScene(scene)
+gameBase.sceneManager.currentScene.add(box.mesh)
+
+const level = new Level()
+
+gameBase.sceneManager.loadScene(level)
