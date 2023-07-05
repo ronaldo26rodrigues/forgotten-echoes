@@ -10,7 +10,7 @@ export default class GameObject {
         
     }
 
-    update() {
+    async update() {
 
     }
 }

@@ -3,12 +3,16 @@ import * as THREE from 'three'
 import sceneManagerInstance from "./SceneManager";
 
 let scene, camera, renderer;
+let instance;
 
-
-export default class Game extends GameObject {
+class Game extends GameObject {
     
     constructor() {
         super()
+        if(instance) {
+            throw new Error("Já existe uma instância desta classe")
+        }
+        instance = this;
         this.sceneManager = sceneManagerInstance;
         renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.shadowMap.enabled = true;
@@ -21,7 +25,7 @@ export default class Game extends GameObject {
         camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100 );
         camera.position.set( 3, 6, 3 );
         camera.lookAt( this.sceneManager.currentScene.position );
-        camera.position.set( 3, 8, 3 );
+        camera.position.set( 2, 4, 2 );
         
         
      
@@ -31,7 +35,7 @@ export default class Game extends GameObject {
         
     }
     
-    update() {
+    async update() {
         if(renderer) renderer.render( sceneManagerInstance.currentScene, camera );
     }
     
@@ -43,4 +47,10 @@ export default class Game extends GameObject {
         renderer.setSize( window.innerWidth, window.innerHeight );
         
     }
+    getCamera() {
+        return camera;
+    }
 }
+
+let gameInstance = new Game()
+export default gameInstance;

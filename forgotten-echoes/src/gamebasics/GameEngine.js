@@ -14,13 +14,15 @@ class GameEngine {
 
     async start(object) {
         object.start()
-        update_queue.push(object.update)
+        update_queue.push(object)
     }
 
-    update() {
-        requestAnimationFrame(()=>{this.update()})
-        update_queue.forEach((e)=>{
-            e()
+    
+
+    async update() {
+        requestAnimationFrame(async ()=>{this.update()})
+        update_queue.forEach(async (e)=>{
+            await e.update()
         })
     }
 }
