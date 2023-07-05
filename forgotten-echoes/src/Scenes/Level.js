@@ -5,8 +5,9 @@ import * as THREE from 'three'
 import {Pathfinding, PathfindingHelper} from 'three-pathfinding';
 import gameInstance from "../gamebasics/Game";
 import gameEngineInstance from "../gamebasics/GameEngine";
+import Girl from "../Entities/Girl";
 
-let box, clock, mixer, character, clips
+let box, clock, girl, pl, d
 
 let navmesh;
 let groupId;
@@ -17,6 +18,7 @@ export default class Level extends Scene {
     constructor() {
         super()
         gameEngineInstance.start(this)
+        d=0
     }
 
     start() {
@@ -26,51 +28,48 @@ export default class Level extends Scene {
         const loader = new GLTFLoader()
 
         box = new Box(1, 1, 1)
+        const light = new AmbientLight(0xCCD5FF, 0.2)
         // const light = new AmbientLight(0x635d44, 1)
-        const light = new AmbientLight(0x635d44, 1)
-        // this.add(box.mesh)
+        // this.add(girl.character)
         this.add(light)
 
-        const l2 = new DirectionalLight(0xffffff, .5)
-        // const l2 = new DirectionalLight(0xb85d44, .5)
+        // const l2 = new DirectionalLight(0xffffff, 1)
+        const l2 = new DirectionalLight(0xE1FEA4, 0.5)
+        l2.position.set(200, 200, 200)
         this.add(l2)
-        loader.load('/character.glb', (char)=>{
-            character = char.scene
-            
-            mixer = new THREE.AnimationMixer( character );
-            this.add(char.scene)
-            char.scene.scale.set(.1,.1,.1)
-            char.scene.position.y = .15
-            char.scene.position.x =1
-            char.scene.position.z =-1.5
-            char.scene.rotation.y = 1
-            char.scene.traverse( child => {
-                
-                if ( child.material ) child.material.metalness = 0;
-                
-            } );
-            clips = char.animations;
-            console.log(char.animations);
-            const idle = THREE.AnimationClip.findByName( clips, 'idle' );
-            const tpose = THREE.AnimationClip.findByName( clips, 'walk' );
-            const actionidle = mixer.clipAction( idle );
-            const actiontpose = mixer.clipAction( tpose );
-            // action.timeScale = 2
-            actiontpose.fadeOut(5)
-            actionidle.fadeIn(6)
-            actiontpose.play()
-            actionidle.play();
-        })
 
+        
+        girl = new Girl((char)=>{this.add(char)})
+        
         loader.load('/bosque1.glb', (bosque)=>{
             this.add(bosque.scene)
-            bosque.scene.receiveShadow = false
-            bosque.scene.traverse( child => {
-
-                if ( child.material ) child.material.metalness = 0;
+            bosque.scene.receiveShadow = true
             
+            
+            bosque.scene.traverse( child => {
+                
+                if ( child.material ) child.material.metalness = 0;
+                if(child.isMesh) {
+                    child.castShadow = true
+                    child.receiveShadow = true
+                }
             } );
         })
+        pl = new PointLight(0x0000ff, 10, 5)
+        loader.load('/aranha.glb', (aranha)=>{
+            aranha.scene.add(pl)
+            pl.position.y = 8
+            pl.position.x = -3
+            this.add(aranha.scene)
+            aranha.scene.scale.set(0.3, 0.3, 0.3)
+            aranha.scene.position.set(0, -.5, 0)
+            // aranha.scene.traverse( child => {
+
+            //     if ( child.material ) child.material.metalness = 0;
+                
+            // } );
+        },undefined,  (error)=>{console.log(error);})
+
         const pathfinding = new Pathfinding()
         const pathfindinghelper = new PathfindingHelper()
         this.add(pathfindinghelper)
@@ -93,22 +92,27 @@ export default class Level extends Scene {
         window.addEventListener('mousedown', event => {
             mouseClick.x = (event.clientX / window.innerWidth) * 2 - 1
             mouseClick.y = -(event.clientY / window.innerHeight) * 2 + 1
+            if(!navpath || (navpath && navpath.length == 0)){girl.getActionWalk().reset()
+            girl.getActionWalk().play()
+            girl.getActionIdle().fadeOut(0.1)}
 
             raycaster.setFromCamera(mouseClick, gameInstance.getCamera())
             const found = raycaster.intersectObjects(this.children)
             if(found.length>0) {
                 let target = found[0].point;
-                groupId = pathfinding.getGroup(ZONE, box.mesh.position)
-                const closest = pathfinding.getClosestNode(box.mesh.position, ZONE, groupId)
+                groupId = pathfinding.getGroup(ZONE, girl.character.position)
+                const closest = pathfinding.getClosestNode(girl.character.position, ZONE, groupId)
                 navpath = pathfinding.findPath(closest.centroid, target, ZONE, groupId)
 
                 if(navpath) {
                     // pathfindinghelper.reset()
-                    // pathfindinghelper.setPlayerPosition(box.mesh.position)
+                    // pathfindinghelper.setPlayerPosition(girl.character.position)
                     // pathfindinghelper.setTargetPosition(target)
                     // pathfindinghelper.setPath(navpath)
                 }
             }
+            // console.log(girl.getActionWalk());
+            // console.log(girl.getActionWalk());
         })
 
     }
@@ -117,22 +121,38 @@ export default class Level extends Scene {
         if(!navpath || navpath.length <= 0) return
 
         let targetPosition = navpath[0]
-        const distance = targetPosition.clone().sub(box.mesh.position)
+        const distance = targetPosition.clone().sub(girl.character.position)
 
         if(distance.lengthSq() > 0.025) {
             distance.normalize()
-            box.mesh.position.add(distance.multiplyScalar(delta * 4))
-            gameInstance.getCamera().position.x = box.mesh.position.x+4
-            gameInstance.getCamera().position.z= box.mesh.position.z+4
+            girl.character.position.add(distance.multiplyScalar(delta * 8))
+            gameInstance.getCamera().position.x =girl.character.position.x+2
+            gameInstance.getCamera().position.z= girl.character.position.z+2
+            if(girl.getActionWalk().enabled == false) {
+                // girl.getActionWalk().reset()
+                // girl.getActionWalk().fadeIn(1)
+                // console.log(girl.getActionWalk());
+            }
+            girl.character.lookAt(girl.character.position.x+distance.x, girl.character.position.y+distance.y, girl.character.position.z+distance.z)
+            // girl.getActionWalk().play()
+            // girl.getActionIdle().pause()
+
         } else {
             navpath.shift()
+            if(navpath.length==0){ 
+            girl.getActionWalk().fadeOut(.1)
+            girl.getActionIdle().reset()
+            girl.getActionIdle().play()
+            girl.getActionIdle().warp(0, 1, 8)}
         }
     }
 
     async update() {
-        const d = clock.getDelta()
+        d += 1
         await this.move(0.01)
-        mixer.update(d)
+        // pl.intensity += Math.sin(d/10)
+        pl.intensity -=0.1
+        
     }
 
 }

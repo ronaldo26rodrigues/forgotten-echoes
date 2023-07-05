@@ -1,9 +1,10 @@
 import gameEngine from "./GameEngine";
 
 export default class GameObject {
-    constructor(){
+    constructor(onLoad = ()=>{}){
         console.log("GameObject iniciado");
         gameEngine.start(this)
+        this.onLoad = onLoad
     }
     
     start(){

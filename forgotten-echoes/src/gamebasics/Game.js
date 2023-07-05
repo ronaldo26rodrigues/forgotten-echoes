@@ -26,7 +26,7 @@ class Game extends GameObject {
         camera.position.set( 3, 6, 3 );
         camera.lookAt( this.sceneManager.currentScene.position );
         camera.position.set( 2, 4, 2 );
-        
+        renderer.shadowMap.enabled = true
         
      
     }
