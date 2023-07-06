@@ -24,19 +24,21 @@ export default class Level extends Scene {
     start() {
         clock = new THREE.Clock()
         
-
+        this.background = new THREE.Color().setHex(0x87ceeb);
         const loader = new GLTFLoader()
 
-        box = new Box(1, 1, 1)
-        const light = new AmbientLight(0xCCD5FF, 0.2)
-        // const light = new AmbientLight(0x635d44, 1)
+        // box = new Box(1, 1, 1)
+        // const light = new AmbientLight(0xCCD5FF, 0.2)
+        // const light = new AmbientLight(0xffffff, .1)
+        // this.add(light)
         // this.add(girl.character)
-        this.add(light)
+        const hlight = new THREE.HemisphereLight( 0xffffff, 0x336633, .4 );
+        this.add(hlight)
 
         // const l2 = new DirectionalLight(0xffffff, 1)
         const l2 = new DirectionalLight(0xE1FEA4, 0.5)
         l2.position.set(200, 200, 200)
-        this.add(l2)
+        // this.add(l2)
 
         
         girl = new Girl((char)=>{this.add(char)})
@@ -55,20 +57,20 @@ export default class Level extends Scene {
                 }
             } );
         })
-        pl = new PointLight(0x0000ff, 10, 5)
-        loader.load('/aranha.glb', (aranha)=>{
-            aranha.scene.add(pl)
-            pl.position.y = 8
-            pl.position.x = -3
-            this.add(aranha.scene)
-            aranha.scene.scale.set(0.3, 0.3, 0.3)
-            aranha.scene.position.set(0, -.5, 0)
-            // aranha.scene.traverse( child => {
+        // pl = new PointLight(0x0000ff, 10, 5)
+        // loader.load('/aranha.glb', (aranha)=>{
+        //     aranha.scene.add(pl)
+        //     pl.position.y = 8
+        //     pl.position.x = -3
+        //     this.add(aranha.scene)
+        //     aranha.scene.scale.set(0.3, 0.3, 0.3)
+        //     aranha.scene.position.set(0, -.5, 0)
+        //     // aranha.scene.traverse( child => {
 
-            //     if ( child.material ) child.material.metalness = 0;
+        //     //     if ( child.material ) child.material.metalness = 0;
                 
-            // } );
-        },undefined,  (error)=>{console.log(error);})
+        //     // } );
+        // },undefined,  (error)=>{console.log(error);})
 
         const pathfinding = new Pathfinding()
         const pathfindinghelper = new PathfindingHelper()
@@ -151,7 +153,7 @@ export default class Level extends Scene {
         d += 1
         await this.move(0.01)
         // pl.intensity += Math.sin(d/10)
-        pl.intensity -=0.1
+        // pl.intensity -=0.1
         
     }
 

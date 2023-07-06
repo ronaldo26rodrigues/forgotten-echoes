@@ -26,7 +26,7 @@ export default class Girl extends GameObject {
             } );
             clips = char.animations;
             const idle = THREE.AnimationClip.findByName( clips, 'idle' );
-            const walk = THREE.AnimationClip.findByName( clips, 'walk' );
+            const walk = THREE.AnimationClip.findByName( clips, 'run' );
             actionidle = this.mixer.clipAction( idle );
             actionwalk = this.mixer.clipAction( walk );
             // action.timeScale = 2
@@ -34,7 +34,7 @@ export default class Girl extends GameObject {
             actionidle.play();
             character.castShadow = true
             // actionwalk.fadeOut(1)
-            actionwalk.timeScale = 3
+            actionwalk.timeScale = 1.2
             this.character = character
             
             this.onLoad(this.character)
