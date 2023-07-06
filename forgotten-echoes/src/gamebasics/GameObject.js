@@ -5,6 +5,7 @@ export default class GameObject {
         console.log("GameObject iniciado");
         gameEngine.start(this)
         this.onLoad = onLoad
+        this.enabled = true
     }
     
     start(){

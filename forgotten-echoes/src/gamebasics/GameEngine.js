@@ -22,7 +22,7 @@ class GameEngine {
     async update() {
         requestAnimationFrame(async ()=>{this.update()})
         update_queue.forEach(async (e)=>{
-            await e.update()
+            if(e.enabled) await e.update()
         })
     }
 }
