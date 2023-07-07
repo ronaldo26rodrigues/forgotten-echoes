@@ -10,6 +10,7 @@ export default class Girl extends GameObject {
         super(onLoad)
         this.scene = scene
         this.pathfinding = pathfinding
+        this.rotationMatrix, this.targetQuaternion
     }
 
     start() {
@@ -32,8 +33,24 @@ export default class Girl extends GameObject {
             } );
             clips = char.animations;
             const idle = THREE.AnimationClip.findByName( clips, 'idle' );
+            const idle2 = THREE.AnimationClip.findByName( clips, 'idle2' );
+            
+            const idle3 = THREE.AnimationClip.findByName( clips, 'idle3' );
+            const idle4 = THREE.AnimationClip.findByName( clips, 'idle4' );
+            
+            const actionidle1 = this.mixer.clipAction(idle)
+            const actionidle2 = this.mixer.clipAction(idle2)
+            const actionidle3 = this.mixer.clipAction(idle3)
+            const actionidle4 = this.mixer.clipAction(idle4)
+
+            actionidle1.loop = THREE.LoopOnce
+            actionidle2.loop = THREE.LoopOnce
+            actionidle3.loop = THREE.LoopOnce
+
+            const idleClips = [actionidle1, actionidle2, actionidle3, actionidle4]
+            this.setRandomTimeOut(()=>{this.playRandomAnimation(idleClips)})
             const walk = THREE.AnimationClip.findByName( clips, 'run' );
-            actionidle = this.mixer.clipAction( idle );
+            actionidle = this.mixer.clipAction( idle4 );
             actionwalk = this.mixer.clipAction( walk );
             // action.timeScale = 2
             actionidle.fadeIn(3)
@@ -44,6 +61,10 @@ export default class Girl extends GameObject {
             this.character = character
             
             this.onLoad(this.character)
+
+            this.rotationMatrix = new THREE.Matrix4()
+            this.targetQuaternion = new THREE.Quaternion()
+            
         })
         const raycaster = new THREE.Raycaster();
         const mouseClick = new THREE.Vector2()
@@ -62,7 +83,7 @@ export default class Girl extends GameObject {
                 const groupId = this.pathfinding.pathfinding.getGroup(this.pathfinding.ZONE, this.character.position)
                 const closest = this.pathfinding.pathfinding.getClosestNode(this.character.position, this.pathfinding.ZONE, groupId)
                 this.navpath = this.pathfinding.pathfinding.findPath(closest.centroid, target, this.pathfinding.ZONE, groupId)
-
+                
                 if(this.navpath) {
                     // pathfindinghelper.reset()
                     // pathfindinghelper.setPlayerPosition(girl.character.position)
@@ -71,6 +92,19 @@ export default class Girl extends GameObject {
                 }
             }
         })
+    }
+
+    playRandomAnimation(animations) {
+        var animation = animations[Math.floor(Math.random()*animations.length)];
+        animation.play()
+    }
+
+    setRandomTimeOut(f) {
+        var rand = Math.round(Math.random() * (10000 - 500)) + 10000;
+        setTimeout(()=>{
+                f();
+                this.setRandomTimeOut(f);  
+        }, rand);
     }
 
     getActionWalk() {
@@ -97,7 +131,13 @@ export default class Girl extends GameObject {
                 // this.getActionWalk().fadeIn(1)
                 // console.log(this.getActionWalk());
             }
-            this.character.lookAt(this.character.position.x+distance.x, this.character.position.y+distance.y, this.character.position.z+distance.z)
+            this.rotationMatrix.setPosition(this.character.position)
+            const eye = new THREE.Vector3(this.character.position.x+distance.x, this.character.position.y+distance.y, this.character.position.z+distance.z)
+
+            this.rotationMatrix.lookAt(eye, this.character.position, this.character.up)
+            this.targetQuaternion.setFromRotationMatrix(this.rotationMatrix)
+            this.character.quaternion.rotateTowards(this.targetQuaternion, 0.4*this.character.quaternion.angleTo(this.targetQuaternion))
+            // this.character.lookAt(this.character.position.x+distance.x, this.character.position.y+distance.y, this.character.position.z+distance.z)
             // this.getActionWalk().play()
             // this.getActionIdle().pause()
 

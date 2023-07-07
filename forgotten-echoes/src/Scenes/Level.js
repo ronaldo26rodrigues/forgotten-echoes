@@ -65,7 +65,7 @@ export default class Level extends GameScene {
         //     this.add(aranha.scene)
         //     aranha.scene.scale.set(0.3, 0.3, 0.3)
         //     aranha.scene.position.set(0, -.5, 0)
-        //     // aranha.scene.traverse( child => {
+        // })
 
 
         const bosquepathfinding = new PathfindingUtil('/bosque1navmesh.glb', 'bosque', (pathfinding)=>{
