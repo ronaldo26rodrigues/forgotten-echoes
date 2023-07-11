@@ -27,6 +27,7 @@ class Game extends GameObject {
         camera.lookAt( this.sceneManager.currentScene.position );
         camera.position.set( 2, 4, 2 );
         renderer.shadowMap.enabled = true
+        // camera.zoom = 1.8
         
      
     }

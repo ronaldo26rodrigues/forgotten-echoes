@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gameInstance from "../gamebasics/Game";
 
-let character, clips, mixer, clock, actionwalk, actionidle, currentidle, mao
+let character, clips, mixer, clock, actionwalk, actionidle, currentidle, mao, actionslash
 
 export default class Girl extends GameObject {
     constructor(onLoad=()=>{}, scene, pathfinding) {
@@ -29,12 +29,11 @@ export default class Girl extends GameObject {
                 if(child.isMesh) {
                     child.castShadow = true
                 }
-                if(child.name === 'mixamorigRightHand') {
+                if(child.name === 'mixamorigRightHandSword') {
                     mao = child
                     loader.load('sword.glb', (sword)=>{
                         mao.add(sword.scene)
                         sword.scene.scale.set(2, 2, 2)
-                        sword.scene.up = (1, 0, 0)
                     })
                 }
                 
@@ -45,11 +44,14 @@ export default class Girl extends GameObject {
             
             const idle3 = THREE.AnimationClip.findByName( clips, 'idle3' );
             const idle4 = THREE.AnimationClip.findByName( clips, 'idle4' );
+            const slash = THREE.AnimationClip.findByName( clips, 'slash' );
             
             const actionidle1 = this.mixer.clipAction(idle)
             const actionidle2 = this.mixer.clipAction(idle2)
             const actionidle3 = this.mixer.clipAction(idle3)
             const actionidle4 = this.mixer.clipAction(idle4)
+            actionslash = this.mixer.clipAction(slash)
+            actionslash.loop = THREE.LoopOnce
 
             actionidle1.loop = THREE.LoopOnce
             actionidle2.loop = THREE.LoopOnce
@@ -104,6 +106,11 @@ export default class Girl extends GameObject {
                     // pathfindinghelper.setPath(navpath)
                 }
             }
+        })
+
+        window.addEventListener('keypress', event => {
+            actionslash.reset()
+            actionslash.play()
         })
     }
 
@@ -171,7 +178,6 @@ export default class Girl extends GameObject {
         const d = clock.getDelta()
         if(this.mixer) this.mixer.update(d)
         this.move(0.01)
-        console.log(mao.position);
         
     }
 
