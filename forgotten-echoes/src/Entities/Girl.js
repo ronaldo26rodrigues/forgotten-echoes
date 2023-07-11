@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gameInstance from "../gamebasics/Game";
 
-let character, clips, mixer, clock, actionwalk, actionidle, mao
+let character, clips, mixer, clock, actionwalk, actionidle, currentidle, mao
 
 export default class Girl extends GameObject {
     constructor(onLoad=()=>{}, scene, pathfinding) {
@@ -54,12 +54,15 @@ export default class Girl extends GameObject {
             actionidle1.loop = THREE.LoopOnce
             actionidle2.loop = THREE.LoopOnce
             actionidle3.loop = THREE.LoopOnce
-
+            
             const idleClips = [actionidle1, actionidle2, actionidle3, actionidle4]
-            this.setRandomTimeOut(()=>{this.playRandomAnimation(idleClips)})
             const walk = THREE.AnimationClip.findByName( clips, 'run' );
             actionidle = this.mixer.clipAction( idle4 );
             actionwalk = this.mixer.clipAction( walk );
+            this.setRandomTimeOut(()=>{
+                if(!actionwalk.isRunning()) currentidle = this.playRandomAnimation(idleClips)
+                
+            })
             // action.timeScale = 2
             actionidle.fadeIn(3)
             actionidle.play();
@@ -82,7 +85,9 @@ export default class Girl extends GameObject {
             mouseClick.y = -(event.clientY / window.innerHeight) * 2 + 1
             if(!this.navpath || (this.navpath && this.navpath.length == 0)){this.getActionWalk().reset()
             this.getActionWalk().play()
-            this.getActionIdle().fadeOut(0.1)}
+            this.getActionIdle().fadeOut(0.1)
+            if(currentidle) currentidle.fadeOut(0.4)
+            }
 
             raycaster.setFromCamera(mouseClick, gameInstance.getCamera())
             const found = raycaster.intersectObjects(this.scene.children)
@@ -104,11 +109,13 @@ export default class Girl extends GameObject {
 
     playRandomAnimation(animations) {
         var animation = animations[Math.floor(Math.random()*animations.length)];
+        animation.reset()
         animation.play()
+        return animation
     }
 
     setRandomTimeOut(f) {
-        var rand = Math.round(Math.random() * (10000 - 500)) + 10000;
+        var rand = Math.round(Math.random() * (20000)) + 20000;
         setTimeout(()=>{
                 f();
                 this.setRandomTimeOut(f);  
@@ -149,13 +156,13 @@ export default class Girl extends GameObject {
             // this.getActionWalk().play()
             // this.getActionIdle().pause()
 
-        } else {
-            this.navpath.shift()
-            if(this.navpath.length==0){ 
-            this.getActionWalk().fadeOut(.1)
-            this.getActionIdle().reset()
-            this.getActionIdle().play()
-            this.getActionIdle().warp(0, 1, 8)}
+            } else {
+                this.navpath.shift()
+                if(this.navpath.length==0){ 
+                this.getActionWalk().fadeOut(.1)
+                this.getActionIdle().reset()
+                this.getActionIdle().play()
+        }
         }
     }
 
