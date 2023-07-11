@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gameInstance from "../gamebasics/Game";
 
-let character, clips, mixer, clock, actionwalk, actionidle
+let character, clips, mixer, clock, actionwalk, actionidle, mao
 
 export default class Girl extends GameObject {
     constructor(onLoad=()=>{}, scene, pathfinding) {
@@ -28,6 +28,14 @@ export default class Girl extends GameObject {
                 if ( child.material ) child.material.metalness = 0;
                 if(child.isMesh) {
                     child.castShadow = true
+                }
+                if(child.name === 'mixamorigRightHand') {
+                    mao = child
+                    loader.load('sword.glb', (sword)=>{
+                        mao.add(sword.scene)
+                        sword.scene.scale.set(2, 2, 2)
+                        sword.scene.up = (1, 0, 0)
+                    })
                 }
                 
             } );
@@ -156,6 +164,8 @@ export default class Girl extends GameObject {
         const d = clock.getDelta()
         if(this.mixer) this.mixer.update(d)
         this.move(0.01)
+        console.log(mao.position);
+        
     }
 
 }
