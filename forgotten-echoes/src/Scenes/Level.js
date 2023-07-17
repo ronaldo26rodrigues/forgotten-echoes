@@ -8,6 +8,7 @@ import gameEngineInstance from "../gamebasics/GameEngine";
 import Girl from "../Entities/Girl";
 import GameScene from "../gamebasics/GameScene";
 import PathfindingUtil from "../util/PathFindingUtil";
+import Tuqui from "../Entities/Tuqui";
 
 let box, clock, girl, pl, d
 
@@ -66,6 +67,12 @@ export default class Level extends GameScene {
         //     aranha.scene.scale.set(0.3, 0.3, 0.3)
         //     aranha.scene.position.set(0, -.5, 0)
         // })
+
+        const tuqui = new Tuqui((tuqui)=>{
+            tuqui.mesh.position.x=1
+        }, this)
+
+        
 
 
         const bosquepathfinding = new PathfindingUtil('/bosque1navmesh.glb', 'bosque', (pathfinding)=>{
