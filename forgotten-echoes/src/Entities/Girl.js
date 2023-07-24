@@ -3,19 +3,20 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gameInstance from "../gamebasics/Game";
 
-let character, clips, mixer, clock, actionwalk, actionidle
+let character, clips, mixer, clock, actionwalk, actionidle, currentidle, mao, actionslash
 
 export default class Girl extends GameObject {
     constructor(onLoad=()=>{}, scene, pathfinding) {
         super(onLoad)
         this.scene = scene
         this.pathfinding = pathfinding
+        this.rotationMatrix, this.targetQuaternion
+        this.atk_target
     }
 
     start() {
         clock = new THREE.Clock()
         const loader = new GLTFLoader()
-        
         loader.load('/character.glb', (char)=>{
             character = char.scene
             this.mixer = new THREE.AnimationMixer( character );
@@ -28,13 +29,50 @@ export default class Girl extends GameObject {
                 if(child.isMesh) {
                     child.castShadow = true
                 }
+                if(child.name === 'mixamorigRightHandSword') {
+                    mao = child
+                    loader.load('sword.glb', (sword)=>{
+                        mao.add(sword.scene)
+                        sword.scene.scale.set(2, 2, 2)
+                    })
+                }
                 
             } );
             clips = char.animations;
             const idle = THREE.AnimationClip.findByName( clips, 'idle' );
+            const idle2 = THREE.AnimationClip.findByName( clips, 'idle2' );
+            
+            const idle3 = THREE.AnimationClip.findByName( clips, 'idle3' );
+            const idle4 = THREE.AnimationClip.findByName( clips, 'idle4' );
+            const slash = THREE.AnimationClip.findByName( clips, 'slash' );
+            
+            const actionidle1 = this.mixer.clipAction(idle)
+            const actionidle2 = this.mixer.clipAction(idle2)
+            const actionidle3 = this.mixer.clipAction(idle3)
+            const actionidle4 = this.mixer.clipAction(idle4)
+            actionslash = this.mixer.clipAction(slash)
+            this.mixer.addEventListener('loop', (e)=>{
+                console.log(e.action._clip);
+                if(e.action._clip.name=='slash') {
+                    
+                }
+            })
+            // actionslash.loop = THREE.LoopOnce
+            actionslash.timeScale = 1.6
+
+            actionidle1.loop = THREE.LoopOnce
+            actionidle2.loop = THREE.LoopOnce
+            actionidle3.loop = THREE.LoopOnce
+            
+            const idleClips = [actionidle1, actionidle2, actionidle3, actionidle4]
             const walk = THREE.AnimationClip.findByName( clips, 'run' );
-            actionidle = this.mixer.clipAction( idle );
+            actionidle = this.mixer.clipAction( idle4 );
             actionwalk = this.mixer.clipAction( walk );
+
+            this.setRandomTimeOut(()=>{
+                if(!actionwalk.isRunning()) currentidle = this.playRandomAnimation(idleClips)
+                
+            })
             // action.timeScale = 2
             actionidle.fadeIn(3)
             actionidle.play();
@@ -44,6 +82,10 @@ export default class Girl extends GameObject {
             this.character = character
             
             this.onLoad(this.character)
+
+            this.rotationMatrix = new THREE.Matrix4()
+            this.targetQuaternion = new THREE.Quaternion()
+            
         })
         const raycaster = new THREE.Raycaster();
         const mouseClick = new THREE.Vector2()
@@ -51,9 +93,12 @@ export default class Girl extends GameObject {
         window.addEventListener('mousedown', event => {
             mouseClick.x = (event.clientX / window.innerWidth) * 2 - 1
             mouseClick.y = -(event.clientY / window.innerHeight) * 2 + 1
+            actionslash.stop()
             if(!this.navpath || (this.navpath && this.navpath.length == 0)){this.getActionWalk().reset()
             this.getActionWalk().play()
-            this.getActionIdle().fadeOut(0.1)}
+            this.getActionIdle().fadeOut(0.1)
+            if(currentidle) currentidle.fadeOut(0.4)
+            }
 
             raycaster.setFromCamera(mouseClick, gameInstance.getCamera())
             const found = raycaster.intersectObjects(this.scene.children)
@@ -62,15 +107,35 @@ export default class Girl extends GameObject {
                 const groupId = this.pathfinding.pathfinding.getGroup(this.pathfinding.ZONE, this.character.position)
                 const closest = this.pathfinding.pathfinding.getClosestNode(this.character.position, this.pathfinding.ZONE, groupId)
                 this.navpath = this.pathfinding.pathfinding.findPath(closest.centroid, target, this.pathfinding.ZONE, groupId)
-
-                if(this.navpath) {
-                    // pathfindinghelper.reset()
-                    // pathfindinghelper.setPlayerPosition(girl.character.position)
-                    // pathfindinghelper.setTargetPosition(target)
-                    // pathfindinghelper.setPath(navpath)
-                }
             }
+
+            found.forEach(child => {
+                if(child.object.name=="tuqui") {
+                    this.atk_target = child.object
+                    
+                }
+            });
         })
+
+        window.addEventListener('keypress', event => {
+            actionslash.reset()
+            actionslash.play()
+        })
+    }
+
+    playRandomAnimation(animations) {
+        var animation = animations[Math.floor(Math.random()*animations.length)];
+        animation.reset()
+        animation.play()
+        return animation
+    }
+
+    setRandomTimeOut(f) {
+        var rand = Math.round(Math.random() * (20000)) + 20000;
+        setTimeout(()=>{
+                f();
+                this.setRandomTimeOut(f);  
+        }, rand);
     }
 
     getActionWalk() {
@@ -86,29 +151,43 @@ export default class Girl extends GameObject {
 
         let targetPosition = this.navpath[0]
         const distance = targetPosition.clone().sub(this.character.position)
+        let distance_from_atktgt = 999
 
-        if(distance.lengthSq() > 0.025) {
+        if(this.atk_target){    
+            distance_from_atktgt = this.atk_target.position.clone().sub(this.character.position)
+            console.log(distance_from_atktgt);
+        }
+
+        const minDistance = this.atk_target ? 0.7 : 0.025
+
+        if(distance.lengthSq() > minDistance) {
             distance.normalize()
             this.character.position.add(distance.multiplyScalar(delta * 8))
+
             gameInstance.getCamera().position.x =this.character.position.x+2
             gameInstance.getCamera().position.z= this.character.position.z+2
-            if(this.getActionWalk().enabled == false) {
-                // this.getActionWalk().reset()
-                // this.getActionWalk().fadeIn(1)
-                // console.log(this.getActionWalk());
-            }
-            this.character.lookAt(this.character.position.x+distance.x, this.character.position.y+distance.y, this.character.position.z+distance.z)
-            // this.getActionWalk().play()
-            // this.getActionIdle().pause()
 
-        } else {
-            this.navpath.shift()
-            if(this.navpath.length==0){ 
-            this.getActionWalk().fadeOut(.1)
-            this.getActionIdle().reset()
-            this.getActionIdle().play()
-            this.getActionIdle().warp(0, 1, 8)}
-        }
+            this.rotationMatrix.setPosition(this.character.position)
+            const eye = new THREE.Vector3(this.character.position.x+distance.x, this.character.position.y+distance.y, this.character.position.z+distance.z)
+
+            this.rotationMatrix.lookAt(eye, this.character.position, this.character.up)
+            this.targetQuaternion.setFromRotationMatrix(this.rotationMatrix)
+            this.character.quaternion.rotateTowards(this.targetQuaternion, 0.4*this.character.quaternion.angleTo(this.targetQuaternion))
+
+            } else {
+                if(this.atk_target){
+                    actionslash.reset()
+                    actionslash.play()
+                    this.atk_target.obj.takeDamage(5)
+                }
+                this.atk_target = null
+                this.navpath.shift()
+                if(this.navpath.length==0){ 
+                    this.getActionWalk().fadeOut(.1)
+                    this.getActionIdle().reset()
+                    this.getActionIdle().play()
+                }
+            }   
     }
 
     update() {
@@ -116,6 +195,7 @@ export default class Girl extends GameObject {
         const d = clock.getDelta()
         if(this.mixer) this.mixer.update(d)
         this.move(0.01)
+        
     }
 
 }
