@@ -2,8 +2,16 @@ import GameObject from "../gamebasics/GameObject";
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gameInstance from "../gamebasics/Game";
+import loadingInstance from "../gamebasics/Loading";
+import Bullet from "./Bullet";
 
 let character, clips, mixer, clock, actionwalk, actionidle, currentidle, mao, actionslash
+let currentWeapon = 0
+
+const AttackMode = {
+    sword: 1,
+    spell: 2    
+}
 
 export default class Girl extends GameObject {
     constructor(onLoad=()=>{}, scene, pathfinding) {
@@ -12,11 +20,12 @@ export default class Girl extends GameObject {
         this.pathfinding = pathfinding
         this.rotationMatrix, this.targetQuaternion
         this.atk_target
+        this.atk_mode = 0
     }
 
     start() {
         clock = new THREE.Clock()
-        const loader = new GLTFLoader()
+        const loader = new GLTFLoader(loadingInstance)
         loader.load('/character.glb', (char)=>{
             character = char.scene
             this.mixer = new THREE.AnimationMixer( character );
@@ -31,7 +40,7 @@ export default class Girl extends GameObject {
                 }
                 if(child.name === 'mixamorigRightHandSword') {
                     mao = child
-                    loader.load('sword.glb', (sword)=>{
+                    loader.load('gauntlet_melee.glb', (sword)=>{
                         mao.add(sword.scene)
                         sword.scene.scale.set(2, 2, 2)
                     })
@@ -52,7 +61,7 @@ export default class Girl extends GameObject {
             const actionidle4 = this.mixer.clipAction(idle4)
             actionslash = this.mixer.clipAction(slash)
             this.mixer.addEventListener('loop', (e)=>{
-                console.log(e.action._clip);
+                // console.log(e.action._clip);
                 if(e.action._clip.name=='slash') {
                     
                 }
@@ -68,6 +77,7 @@ export default class Girl extends GameObject {
             const walk = THREE.AnimationClip.findByName( clips, 'run' );
             actionidle = this.mixer.clipAction( idle4 );
             actionwalk = this.mixer.clipAction( walk );
+            
 
             this.setRandomTimeOut(()=>{
                 if(!actionwalk.isRunning()) currentidle = this.playRandomAnimation(idleClips)
@@ -103,7 +113,11 @@ export default class Girl extends GameObject {
             raycaster.setFromCamera(mouseClick, gameInstance.getCamera())
             const found = raycaster.intersectObjects(this.scene.children)
             if(found.length>0) {
+                console.log(found);
                 let target = found[0].point;
+                found.forEach(f => {
+                    if(f.object.name=='bosquefull') target=f.point
+                });
                 const groupId = this.pathfinding.pathfinding.getGroup(this.pathfinding.ZONE, this.character.position)
                 const closest = this.pathfinding.pathfinding.getClosestNode(this.character.position, this.pathfinding.ZONE, groupId)
                 this.navpath = this.pathfinding.pathfinding.findPath(closest.centroid, target, this.pathfinding.ZONE, groupId)
@@ -115,11 +129,21 @@ export default class Girl extends GameObject {
                     
                 }
             });
+
+            if(this.atk_target && currentWeapon == AttackMode.spell) {
+            }
+            const ball = new Bullet(0.04, this.character.position)
+            console.log(ball.mesh);
+            this.scene.add(ball.mesh)
+            ball.addParticles()
         })
 
         window.addEventListener('keypress', event => {
-            actionslash.reset()
-            actionslash.play()
+            if(event.key=='z') {
+                currentWeapon += 1
+                if(currentWeapon > Object.keys(AttackMode).length) currentWeapon = 1
+            }
+            console.log(currentWeapon);
         })
     }
 
@@ -147,7 +171,7 @@ export default class Girl extends GameObject {
     }
 
     async move(delta) {
-        if(!this.navpath || this.navpath.length <= 0) return
+        if(!this.navpath || this.navpath.length <= 0 || (this.atk_target && currentWeapon == AttackMode.spell) ) return
 
         let targetPosition = this.navpath[0]
         const distance = targetPosition.clone().sub(this.character.position)
@@ -177,10 +201,14 @@ export default class Girl extends GameObject {
             } else {
                 if(this.atk_target){
                     actionslash.reset()
+                    console.log(this.atk_target);
+                    setTimeout(()=>{
+                        this.atk_target.obj.takeDamage(5)
+                        this.atk_target = null
+                    }, 500);
                     actionslash.play()
-                    this.atk_target.obj.takeDamage(5)
+                    
                 }
-                this.atk_target = null
                 this.navpath.shift()
                 if(this.navpath.length==0){ 
                     this.getActionWalk().fadeOut(.1)
@@ -188,6 +216,14 @@ export default class Girl extends GameObject {
                     this.getActionIdle().play()
                 }
             }   
+    }
+
+    attack() {
+
+    }
+
+    switchWeapon() {
+
     }
 
     update() {

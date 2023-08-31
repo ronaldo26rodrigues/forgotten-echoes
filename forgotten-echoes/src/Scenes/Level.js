@@ -9,12 +9,22 @@ import Girl from "../Entities/Girl";
 import GameScene from "../gamebasics/GameScene";
 import PathfindingUtil from "../util/PathFindingUtil";
 import Tuqui from "../Entities/Tuqui";
+import loadingInstance from "../gamebasics/Loading";
 
 let box, clock, girl, pl, d
 
 let navmesh;
 let groupId;
 let navpath;
+
+let particleCount, positions, particleGeometry;
+
+const curve = new THREE.CubicBezierCurve3(
+    new THREE.Vector3(-2, 0, -2),
+    new THREE.Vector3(-1, 2, -1),
+    new THREE.Vector3(1, 2, 1),
+    new THREE.Vector3(2, 0, 2)
+);
 
 export default class Level extends GameScene {
 
@@ -24,10 +34,12 @@ export default class Level extends GameScene {
     }
 
     start() {
+        
+
         clock = new THREE.Clock()
         
         this.background = new THREE.Color().setHex(0x87ceeb);
-        const loader = new GLTFLoader()
+        const loader = new GLTFLoader(loadingInstance)
 
         // box = new Box(1, 1, 1)
         // const light = new AmbientLight(0xCCD5FF, 0.2)
@@ -78,7 +90,29 @@ export default class Level extends GameScene {
         const bosquepathfinding = new PathfindingUtil('/bosque1navmesh.glb', 'bosque', (pathfinding)=>{
             girl = new Girl((char)=>{this.add(char)}, this, pathfinding)
         })
+        
+        // Create particle material and geometry
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0x222244,
+            size: 0.04-Math.random()*0.01,
+            map: new THREE.TextureLoader().load("/firefly.png"),
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+        });
+        particleGeometry = new THREE.BufferGeometry();
+        particleCount = 5000
+        positions = new Float32Array(particleCount * 3);
 
+        // Set random initial positions for particles
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 30;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+        }
+
+        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        this.add(particles);
         
 
     }
@@ -89,7 +123,14 @@ export default class Level extends GameScene {
         d += 1
         // pl.intensity += Math.sin(d/10)
         // pl.intensity -=0.1
-        
+        for (let i = 0; i < particleCount; i++) {
+            
+            positions[i * 3] += (Math.random() - 0.4) * 0.005;
+            positions[i * 3 + 1] += (Math.random() - 0.1) * 0.005;
+            positions[i * 3 + 2] += (Math.random() - 0.4) * 0.0005;
+            // if (positions[i * 3 + 1]>30) positions[i * 3 + 1] = 0 
+        }
+        particleGeometry.attributes.position.needsUpdate = true;
     }
 
 }

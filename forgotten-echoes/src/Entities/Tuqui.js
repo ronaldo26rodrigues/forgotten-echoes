@@ -1,5 +1,6 @@
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import GameObject from "../gamebasics/GameObject";
+import loadingInstance from "../gamebasics/Loading";
 
 export default class Tuqui extends GameObject {
     constructor(onLoad=()=>{}, scene) {
@@ -12,7 +13,7 @@ export default class Tuqui extends GameObject {
     }
 
     start() {
-        const loader = new GLTFLoader()
+        const loader = new GLTFLoader(loadingInstance)
         loader.load("/tuqui.glb", (tuqui)=>{
             tuqui.scene.traverse((child)=>{
                 child.name = "tuqui"
