@@ -17,7 +17,7 @@ let navmesh;
 let groupId;
 let navpath;
 
-let particleCount, positions, particleGeometry;
+let particleCount, positions, particleGeometry, particles;
 
 const curve = new THREE.CubicBezierCurve3(
     new THREE.Vector3(-2, 0, -2),
@@ -91,46 +91,68 @@ export default class Level extends GameScene {
             girl = new Girl((char)=>{this.add(char)}, this, pathfinding)
         })
         
-        // Create particle material and geometry
-        const particleMaterial = new THREE.PointsMaterial({
-            color: 0x222244,
-            size: 0.04-Math.random()*0.01,
-            map: new THREE.TextureLoader().load("/firefly.png"),
-            blending: THREE.AdditiveBlending,
-            transparent: true,
-        });
-        particleGeometry = new THREE.BufferGeometry();
-        particleCount = 5000
-        positions = new Float32Array(particleCount * 3);
+        // Create particles
+        particleCount = 500;
+        particles = new THREE.Group();
 
-        // Set random initial positions for particles
         for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 30;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.005, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xffff00 })
+        );
+
+        // Randomly position particles
+        particle.position.set(
+            Math.random() * 20 - 10,
+            Math.random() * 5,
+            Math.random() * 20 -10
+        );
+        // Add random velocities for smoother animation
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.02,
+            (Math.random() - 0.5) * 0.02,
+            (Math.random() - 0.5) * 0.02
+        );
+
+        particle.lifetime = Math.random() * 1;
+
+        particles.add(particle);
         }
 
-        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        const particles = new THREE.Points(particleGeometry, particleMaterial);
         this.add(particles);
+
+
+        // Animation variables
+        clock = new THREE.Clock();
         
 
     }
 
     
 
-    async update() {
+     update() {
         d += 1
         // pl.intensity += Math.sin(d/10)
         // pl.intensity -=0.1
-        for (let i = 0; i < particleCount; i++) {
+        const elapsedTime = clock.getElapsedTime();
+
+        particles.children.forEach(particle => {
+            // Add wavy motion along with random floating
+            particle.position.add(particle.velocity);
             
-            positions[i * 3] += (Math.random() - 0.4) * 0.005;
-            positions[i * 3 + 1] += (Math.random() - 0.1) * 0.005;
-            positions[i * 3 + 2] += (Math.random() - 0.4) * 0.0005;
-            // if (positions[i * 3 + 1]>30) positions[i * 3 + 1] = 0 
-        }
-        particleGeometry.attributes.position.needsUpdate = true;
+            // Randomly change particle velocity direction over time
+            if (Math.random() < 0.01) {
+                particle.velocity.set(
+                    (Math.random() - 0.5) * 0.01,
+                    (Math.random() - 0.5) * 0.01,
+                    (Math.random() - 0.5) * 0.01
+                    );
+                }
+                particle.lifetime -= 0.016; // Adjust the decrement value based on your frame rate
+                if (particle.lifetime <= 0) {
+                    particles.remove(particle);
+                }
+          });
     }
 
 }

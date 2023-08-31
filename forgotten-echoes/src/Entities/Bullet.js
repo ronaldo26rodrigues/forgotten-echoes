@@ -1,12 +1,13 @@
 import * as THREE from 'three'
 import GameObject from '../gamebasics/GameObject';
 
-let particleCount, positions, particleGeometry, particlesData, particles;
+let particleCount, positions, particleGeometry, particlesData, particles, clock;
 
 export default class Bullet extends GameObject {
     constructor(
         radius,
-        position
+        position,
+        target
     ) {
         super()
         this.radius = radius
@@ -20,77 +21,74 @@ export default class Bullet extends GameObject {
         // const light = new THREE.PointLight( 0x0000ff, 0.5, 10 );
         // // light.position.set(this.position);
         // light.visible = false
-        // this.mesh.add( light );
 
-        
+        const dif_x = position.x - target.x
+        const dif_z = position.z - target.z
+
+        const proportion = dif_x>=dif_z ? dif_x/dif_z : dif_z/dif_x
+        console.log(dif_x, dif_z, proportion);
+        const speed = 0.01
+
+        this.velocity = new THREE.Vector3(speed*(dif_x/dif_z), 0, speed*(dif_z/dif_x))
+        console.log(this.velocity);
+        particles = new THREE.Group();
+        this.addParticles()
+        // this.mesh.add( light );
+        // light.visible = true
     }
 
     addParticles() {
-        // Create particle material and geometry
-        const particleMaterial = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.05-Math.random()*0.01,
-            map: new THREE.TextureLoader().load("/sparkle.png"),
-            blending: THREE.AdditiveBlending,
-            transparent: true,
-            
-        });
-        // Define particle properties including position, velocity, and lifetime
-        console.log(particlesData);
-        particleGeometry = new THREE.BufferGeometry();
-        particleCount = 10
-        positions = new Float32Array(particleCount * 3);
-        particlesData = [];
-        for (let i = 0; i < particleCount; i++) {
-            particlesData.push({
-                age: 0 // Initial age
-            });
-        }
+       // Create particles
+       particleCount = 1;
 
-        // Set random initial positions for particles
-        for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (this.position.x+Math.random()*0.1);
-            positions[i * 3 + 1] = (this.position.y+1);
-            positions[i * 3 + 2] = (this.position.z+Math.random()*0.1);
-        }
+       for (let i = 0; i < particleCount; i++) {
+       const particle = new THREE.Mesh(
+           new THREE.SphereGeometry(0.005, 8, 8),
+           new THREE.MeshBasicMaterial({ color: 0x0000ff })
+       );
 
-        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        particles = new THREE.Points(particleGeometry, particleMaterial);
-        this.mesh.parent.add(particles);
+       // Randomly position particles
+       particle.position.set(
+           Math.random() * 0.1 - 0.1,
+           Math.random() * 0.1-0.1,
+           Math.random() * 0.1 -0.1
+       );
+       // Add random velocities for smoother animation
+       particle.velocity = new THREE.Vector3(
+           this.velocity.x*0.1*-1,
+           this.velocity.y*0.1*-1,
+           this.velocity.z*0.1*-1,
+       );
+       particle.lifetime = Math.random() * 1;
+
+       particles.add(particle);
+       }
+
+       this.mesh.add(particles);
+
+
+       // Animation variables
+       clock = new THREE.Clock();
         
     }
 
     start(){
     }
     update() {
-        this.mesh.position.x += 0.1
-        for (let i = 0; i < particleCount; i++) {
-            const particle = particlesData[i];
-            particle.age += 1;
+        this.mesh.position.add(this.velocity)
+        const elapsedTime = clock.getElapsedTime();
 
-        if (particle.age > 60) { // Assuming 60 frames per second
-            // Remove particle from scene and array after 1 second
-            particles.parent.remove(particles)
-            particlesData.splice(i, 1);
-            particle.age = 0;
-            i--; // Adjust index after removing a particle
-        } else {
-            positions[i * 3] += (Math.random() - 0.5) * 0.025;
-            positions[i * 3 + 1] += (Math.random() - 0.5) * 0.025;
-            positions[i * 3 + 2] += (Math.random() - 0.5) * 0.025;
-
-        }// if (positions[i * 3 + 1]>30) positions[i * 3 + 1] = 0 
-    }
-    particleGeometry.attributes.position.needsUpdate = true;
-    for (let i = 0; i < particleCount; i++) {
-        positions[i * 3] = (this.mesh.position.x+Math.random()*0.1);
-        positions[i * 3 + 1] = (this.mesh.position.y);
-        positions[i * 3 + 2] = (this.mesh.position.z+Math.random()*0.1);
-    }
-
-    particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    particles = new THREE.Points(particleGeometry, particleMaterial);
-    
-    this.mesh.parent.add(particles);
+        particles.children.forEach(particle => {
+            // Add wavy motion along with random floating
+            particle.position.add(particle.velocity);
+            
+            // Randomly change particle velocity direction over time
+            
+                particle.lifetime -= 0.016; // Adjust the decrement value based on your frame rate
+                if (particle.lifetime <= 0) {
+                    particles.remove(particle);
+                }
+          });
+          this.addParticles()
     }
 }

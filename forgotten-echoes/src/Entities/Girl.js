@@ -112,9 +112,10 @@ export default class Girl extends GameObject {
 
             raycaster.setFromCamera(mouseClick, gameInstance.getCamera())
             const found = raycaster.intersectObjects(this.scene.children)
+            let target
             if(found.length>0) {
                 console.log(found);
-                let target = found[0].point;
+                target = found[0].point;
                 found.forEach(f => {
                     if(f.object.name=='bosquefull') target=f.point
                 });
@@ -132,10 +133,9 @@ export default class Girl extends GameObject {
 
             if(this.atk_target && currentWeapon == AttackMode.spell) {
             }
-            const ball = new Bullet(0.04, this.character.position)
+            const ball = new Bullet(0.02, this.character.position, {x: target.x, z: target.y})
             console.log(ball.mesh);
             this.scene.add(ball.mesh)
-            ball.addParticles()
         })
 
         window.addEventListener('keypress', event => {
