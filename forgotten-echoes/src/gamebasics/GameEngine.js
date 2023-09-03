@@ -15,6 +15,7 @@ class GameEngine {
     async start(object) {
         object.start()
         update_queue.push(object)
+        console.log(update_queue);
     }
 
     
@@ -25,7 +26,20 @@ class GameEngine {
             if(e.enabled) await e.update()
         })
     }
+    getStartQueue() {
+        return start_queue
+    }
+    
+    getUpdateQueue() {
+        return update_queue
+    }
+
+    clear() {
+        start_queue = []
+        update_queue = []
+    }
 }
+
 
 let gameEngineInstance = Object.freeze(new GameEngine())
 export default gameEngineInstance;

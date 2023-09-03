@@ -21,7 +21,6 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 
 import sceneManagerInstance from "../gamebasics/SceneManager";
 import { Vector3 } from "yuka";
-import Aranha from "../Entities/Aranha";
 
 let box, clock, girl, pl, d
 
@@ -39,7 +38,7 @@ const curve = new THREE.CubicBezierCurve3(
     new THREE.Vector3(2, 0, 2)
 );
 
-export default class Level extends GameScene {
+export default class Level2 extends GameScene {
 
     constructor() {
         super()
@@ -80,7 +79,7 @@ export default class Level extends GameScene {
 
         
         
-        loader.load('/bosque1.glb', (bosque)=>{
+        loader.load('/bosque2.glb', (bosque)=>{
             this.add(bosque.scene)
             bosque.scene.receiveShadow = true
             
@@ -94,30 +93,23 @@ export default class Level extends GameScene {
                 }
             } );
         })
-        // pl = new PointLight(0x0000ff, .1, 5)
-        // loader.load('/aranha.glb', (aranha)=>{
-        //     aranha.scene.add(pl)
-        //     pl.position.y = 8
-        //     pl.position.x = -3
-        //     this.add(aranha.scene)
-        //     aranha.scene.scale.set(0.3, 0.3, 0.3)
-        //     aranha.scene.position.set(0, -.5, 0)
-        // })
-
-        const aranha = new Aranha((aranha)=>{
-            aranha.mesh.position.set(3, -1, 2)
-        }, this)
-
-        const tuqui = new Tuqui((tuqui)=>{
-            tuqui.mesh.position.x=1
-            
-        }, this)
+        
+        const area = 10;
+        const numb = 10
+        for (let i = 0; i < numb; i++) {
+            const tuqui = new Tuqui((tuqui)=>{
+                tuqui.mesh.position.set(Math.random()*area-area/2, 1, Math.random()*area-area/2)
+                
+            }, this)
+        }
 
         
 
 
-        const bosquepathfinding = new PathfindingUtil('/bosque1navmesh.glb', 'bosque', (pathfinding)=>{
+        const bosquepathfinding = new PathfindingUtil('/bosque2navmesh.glb', 'bosque', (pathfinding, _, navmesh)=>{
             girl = new Girl((char)=>{this.add(char)}, this, pathfinding)
+            navmesh.visible = false
+            this.add(navmesh)
         })
         
         // Create particles
@@ -174,8 +166,7 @@ export default class Level extends GameScene {
     
 
      update() {
-        // d += 1
-        // pl.intensity += Math.sin(d/10)*0.1
+        
         // pl.intensity -=0.1
         const elapsedTime = clock.getElapsedTime();
 
