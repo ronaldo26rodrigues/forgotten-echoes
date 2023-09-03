@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import GameObject from '../gamebasics/GameObject';
 
-let particleCount, positions, particleGeometry, particlesData, particles, clock;
+let particleCount, positions, particleGeometry, particlesData, clock;
 
 export default class Bullet extends GameObject {
     constructor(
@@ -11,60 +11,75 @@ export default class Bullet extends GameObject {
     ) {
         super()
         this.radius = radius
-
-        this.mesh
+        this.particles
         this.position = position
-        this.mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 8), new THREE.MeshStandardMaterial({color: 0x0000ff}))
+        this.mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 8), new THREE.MeshBasicMaterial({color: 0x0cfaf6}))
         console.log(this.position);
         this.mesh.position.set(this.position.x, this.position.y+1, this.position.z)
 
-        // const light = new THREE.PointLight( 0x0000ff, 0.5, 10 );
+        this.lifetime = 2
+        
+        // Assuming you have two Vector3 points
+        const point1 = position;
+        const point2 = target.position;
+        
+        // Calculate the angle between the two points
+        const deltaY = point2.z - point1.z;
+        const deltaX = point2.x - point1.x;
+        const angle = Math.atan2(deltaY, deltaX);
+        
+        // Calculate the velocity components
+        
+        // Convert angle from radians to degrees
+        const angleDegrees = THREE.MathUtils.radToDeg(angle);
+        
+        console.log(`Angle between the points: ${angleDegrees} degrees`);
+        const speed = 0.4
+        var velocityX = Math.cos(angle) * speed;
+        var velocityZ = Math.sin(angle) * speed;
+        
+        this.velocity = new THREE.Vector3(velocityX, 0, velocityZ)
+        console.log(this.velocity);
+        this.particles = new THREE.Group();
+        this.addParticles()
+
+        // const light = new THREE.PointLight( 0x0cfaf6, 0.5, 4 );
         // // light.position.set(this.position);
         // light.visible = false
-
-        const dif_x = position.x - target.x
-        const dif_z = position.z - target.z
-
-        const proportion = dif_x>=dif_z ? dif_x/dif_z : dif_z/dif_x
-        console.log(dif_x, dif_z, proportion);
-        const speed = 0.01
-
-        this.velocity = new THREE.Vector3(speed*(dif_x/dif_z), 0, speed*(dif_z/dif_x))
-        console.log(this.velocity);
-        particles = new THREE.Group();
-        this.addParticles()
         // this.mesh.add( light );
         // light.visible = true
     }
 
     addParticles() {
-       // Create particles
-       particleCount = 1;
+       // Create this.particles
+       particleCount = 10;
 
        for (let i = 0; i < particleCount; i++) {
        const particle = new THREE.Mesh(
            new THREE.SphereGeometry(0.005, 8, 8),
-           new THREE.MeshBasicMaterial({ color: 0x0000ff })
+           new THREE.MeshBasicMaterial({ color: 0x0cfaf6 })
        );
 
-       // Randomly position particles
+       // Randomly position this.particles
+       const spread = 0.08
        particle.position.set(
-           Math.random() * 0.1 - 0.1,
-           Math.random() * 0.1-0.1,
-           Math.random() * 0.1 -0.1
+           Math.random() * spread - spread,
+           Math.random() * spread - spread,
+           Math.random() * spread - spread
        );
        // Add random velocities for smoother animation
+       const speed = 0.5;
        particle.velocity = new THREE.Vector3(
-           this.velocity.x*0.1*-1,
-           this.velocity.y*0.1*-1,
-           this.velocity.z*0.1*-1,
+           this.velocity.x*speed*-1,
+           this.velocity.y*speed*-1,
+           this.velocity.z*speed*-1,
        );
-       particle.lifetime = Math.random() * 1;
+       particle.lifetime = Math.random() * 0.2;
 
-       particles.add(particle);
+       this.particles.add(particle);
        }
 
-       this.mesh.add(particles);
+       this.mesh.add(this.particles);
 
 
        // Animation variables
@@ -78,7 +93,7 @@ export default class Bullet extends GameObject {
         this.mesh.position.add(this.velocity)
         const elapsedTime = clock.getElapsedTime();
 
-        particles.children.forEach(particle => {
+        this.particles.children.forEach(particle => {
             // Add wavy motion along with random floating
             particle.position.add(particle.velocity);
             
@@ -86,9 +101,13 @@ export default class Bullet extends GameObject {
             
                 particle.lifetime -= 0.016; // Adjust the decrement value based on your frame rate
                 if (particle.lifetime <= 0) {
-                    particles.remove(particle);
+                    this.particles.remove(particle);
                 }
           });
           this.addParticles()
+          if (this.lifetime<=0) {
+            this.destroy()
+          }
+          this.lifetime-=0.016
     }
 }

@@ -1,4 +1,7 @@
 import * as THREE from 'three'
+import gameEngineInstance from './GameEngine';
+import GameScene from './GameScene';
+import gameInstance, { Game } from './Game';
 
 let instance
 
@@ -9,16 +12,25 @@ class SceneManager {
         }
         instance = this;
 
-        this.currentScene = new THREE.Scene()
+        this.currentScene = new GameScene()
     }
 
     loadScene(scene) {
-        this.disposeScene(this.currentScene);
-        this.currentScene = scene
+        this.currentScene.disposeScene();
+        this.currentScene.clear()
+        this.currentScene.enabled = false
+        // gameEngineInstance.clear()
+        gameEngineInstance.getUpdateQueue().forEach((a)=>{
+            if(!(a instanceof Game)) delete gameEngineInstance.getUpdateQueue()[gameEngineInstance.getUpdateQueue().indexOf(a)]
+        })
+        this.currentScene = null
+
+        this.currentScene = new scene()
     }
 
 
     disposeScene(scene) {
+        console.log(scene);
         scene.traverse((object)=>{
             if(object.geometry) {
                 object.geometry.dispose()
